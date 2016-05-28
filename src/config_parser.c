@@ -278,7 +278,9 @@ struct ConfigResultIR *parse_config(const char *input, struct context *context) 
     statelist_idx = 1;
 
     /* A YAJL JSON generator used for formatting replies. */
-    command_output.json_gen = yajl_gen_alloc(NULL);
+    if (command_output.json_gen == NULL) {
+        command_output.json_gen = yajl_gen_alloc(NULL);
+    }
 
     y(array_open);
 
@@ -876,18 +878,23 @@ static char *get_resource(char *name) {
     return resource;
 }
 
+struct variables_head variables;
+
 /*
  * Parses the given file by first replacing the variables, then calling
  * parse_config and possibly launching i3-nagbar.
  *
  */
-bool parse_file(const char *f, bool use_nagbar) {
-    struct variables_head variables = SLIST_HEAD_INITIALIZER(&variables);
+bool parse_file_ex(const char *f, bool use_nagbar, bool is_include) {
     int fd;
     struct stat stbuf;
     char *buf;
     FILE *fstr;
     char buffer[4096], key[512], value[4096], *continuation = NULL;
+
+    if (!is_include) {
+        SLIST_INIT(&variables);
+    }
 
     if ((fd = open(f, O_RDONLY)) == -1)
         die("Could not open configuration file: %s\n", strerror(errno));
@@ -1070,7 +1077,9 @@ bool parse_file(const char *f, bool use_nagbar) {
     context->filename = f;
 
     struct ConfigResultIR *config_output = parse_config(new, context);
-    yajl_gen_free(config_output->json_gen);
+    if (!is_include) {
+        yajl_gen_free(config_output->json_gen);
+    }
 
     extract_workspace_names_from_bindings();
     check_for_duplicate_bindings(context);
@@ -1086,20 +1095,30 @@ bool parse_file(const char *f, bool use_nagbar) {
 
     bool has_errors = context->has_errors;
 
-    FREE(context->line_copy);
-    free(context);
+    if (!is_include) {
+        FREE(context->line_copy);
+        free(context);
+    }
+
+
     free(new);
     free(buf);
 
-    while (!SLIST_EMPTY(&variables)) {
-        current = SLIST_FIRST(&variables);
-        FREE(current->key);
-        FREE(current->value);
-        SLIST_REMOVE_HEAD(&variables, variables);
-        FREE(current);
+    if (!is_include) {
+        while (!SLIST_EMPTY(&variables)) {
+            current = SLIST_FIRST(&variables);
+            FREE(current->key);
+            FREE(current->value);
+            SLIST_REMOVE_HEAD(&variables, variables);
+            FREE(current);
+        }
     }
 
     return !has_errors;
+}
+
+bool parse_file(const char *f, bool use_nagbar) {
+    return parse_file_ex(f, use_nagbar, false);
 }
 
 #endif

@@ -40,6 +40,21 @@ void start_config_error_nagbar(const char *configpath, bool has_errors);
 /**
  * Parses the given file by first replacing the variables, then calling
  * parse_config and launching i3-nagbar if use_nagbar is true.
+ * The is_include flag should be true if called from cfg_include, false
+ * otherwise.
+ *
+ * The return value is a boolean indicating whether there were errors during
+ * parsing.
+ *
+ */
+bool parse_file_ex(const char *f, bool use_nagbar, bool is_include);
+
+/**
+ * Parses the given file by first replacing the variables, then calling
+ * parse_config and launching i3-nagbar if use_nagbar is true.
+ *
+ * This is a simple wrapper around parse_file_ex and is equivalent to
+ *   parse_file_ex(f, use_nagbar, false);
  *
  * The return value is a boolean indicating whether there were errors during
  * parsing.

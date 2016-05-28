@@ -112,6 +112,17 @@ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, co
     configure_binding(bindtype, modifiers, key, release, border, whole_window, command, DEFAULT_BINDING_MODE, false);
 }
 
+CFGFUN(include, const char *path) {
+    char *config_path = resolve_tilde(path);
+    if (path_exists(config_path)) {
+        LOG("Including config file '%s'\n", config_path);
+        parse_file_ex(config_path, true, true);
+    } else {
+        ELOG("Config file '%s' doesn't exist\n", config_path);
+    }
+    free(config_path);
+}
+
 /*******************************************************************************
  * Mode handling
  ******************************************************************************/

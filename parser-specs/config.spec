@@ -46,6 +46,7 @@ state INITIAL:
   'ipc_socket', 'ipc-socket'               -> IPC_SOCKET
   'restart_state'                          -> RESTART_STATE
   'popup_during_fullscreen'                -> POPUP_DURING_FULLSCREEN
+  'include'                                -> INCLUDE
   exectype = 'exec_always', 'exec'         -> EXEC
   colorclass = 'client.background'
       -> COLOR_SINGLE
@@ -292,6 +293,11 @@ state COLOR_CHILD_BORDER:
       -> call cfg_color($colorclass, $border, $background, $text, $indicator, $child_border)
   end
       -> call cfg_color($colorclass, $border, $background, $text, $indicator, NULL)
+
+# include <path>
+state INCLUDE:
+  path = string
+      -> call cfg_include($path)
 
 # <exec|exec_always> [--no-startup-id] command
 state EXEC:
